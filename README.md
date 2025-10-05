@@ -1,4 +1,4 @@
-# AV SkyAware: Interactive NASA Image Viewer with AI Descriptions and Annotations
+# AV SkyAware: Interactive NASA Image Viewer with AI Descriptions.
 ## Project Overview
 AV SkyAware is a web-based interactive viewer for large NASA astronomy and planetary imag
 ---
