@@ -36,7 +36,7 @@ node server.js
 ollama pull moondream
 3. Serve Ollama API locally:
 ollama serve
-If the default port 11434 is busy, stop conflicting processes or start on another port (e
+If the default port 11434 is busy, stop conflicting processes or start on another port (
 export OLLAMA_HOST=127.0.0.1:11500
 Update the frontend fetch URL in `viewer.html` accordingly to the chosen port.
 ---
