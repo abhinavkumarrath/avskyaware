@@ -1,176 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>AV SkyAware — Viewer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="/avskyawarelogo.jpg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-  <script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
-  <style>
-    :root{
-      --bg:#040813; --bg2:#091430; --edge:#1A2A52; --edge2:#21406d;
-      --brand:#7EC8E3; --accent:#8AF5D4; --accent2:#79D8FF;
-      --text:#E9F2FB; --muted:#A5B6CC;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%; margin:0}
-    body{
-      color:var(--text);
-      font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
-      background:
-        radial-gradient(1200px 700px at 12% -10%, #0b1b48 0%, transparent 60%),
-        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
-      overflow-x:hidden;
-    }
-    .glow-wrap{position:fixed; inset:0; pointer-events:none; z-index:-1}
-    .glow{
-      position:absolute; inset:-20%;
-      background:
-        radial-gradient(600px 380px at 18% 18%, rgba(126,200,227,.35), transparent 60%),
-        radial-gradient(520px 340px at 80% 12%, rgba(138,245,212,.28), transparent 60%);
-      filter:blur(60px); opacity:.55; animation:floatGlow 18s ease-in-out infinite alternate;
-    }
-    @keyframes floatGlow{to{transform:translateY(-14px) translateX(12px)}}
-    .header{
-      position:sticky; top:0; z-index:100;
-      display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-      padding:10px clamp(12px,3vw,20px);
-      background:linear-gradient(180deg, rgba(8,12,28,.85), rgba(5,9,20,.82));
-      border-bottom:1px solid var(--edge);
-      backdrop-filter: blur(10px);
-    }
-    .brand{display:flex; align-items:center; gap:12px}
-    .brand img{width:42px; height:42px; border-radius:10px; border:1px solid var(--edge); 
-      box-shadow:0 0 16px rgba(126,200,227,.4)}
-    .brand h1{margin:0; font-family:Orbitron,sans-serif; color:var(--brand); 
-      letter-spacing:.4px; font-size:clamp(18px,3.8vw,28px)}
-    .spacer{flex:1}
-    .back-btn{
-      padding:8px 16px; border-radius:10px; text-decoration:none;
-      background:rgba(126,200,227,.15); color:var(--accent2);
-      border:1px solid var(--edge2); font-weight:600; transition:.2s;
-    }
-    .back-btn:hover{background:rgba(126,200,227,.25); transform:translateY(-1px)}
-    .container{
-      max-width:1400px; margin:0 auto; padding:20px;
-    }
-    .gallery{
-      display:grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap:20px;
-      margin-top:20px;
-    }
-    .gallery-item{
-      position:relative; border-radius:14px; overflow:hidden;
-      background:rgba(10,18,42,.6); border:1px solid var(--edge);
-      cursor:pointer; transition: transform .25s ease, box-shadow .25s ease;
-      aspect-ratio: 4/3;
-    }
-    .gallery-item:hover{
-      transform:translateY(-4px) scale(1.02);
-      box-shadow:0 16px 40px rgba(0,0,0,.4), 0 0 30px rgba(126,200,227,.2);
-    }
-    .gallery-item img{
-      width:100%; height:100%; object-fit:cover; display:block;
-    }
-    .gallery-item .overlay{
-      position:absolute; bottom:0; left:0; right:0;
-      padding:14px;
-      background:linear-gradient(to top, rgba(4,8,19,.98), rgba(4,8,19,.85) 80%, transparent);
-      color:var(--text);
-    }
-    .gallery-item .image-id{
-      font-size:11px; color:var(--accent); font-weight:600;
-      letter-spacing:.5px; margin-bottom:4px; text-transform:uppercase;
-    }
-    .gallery-item .image-name{
-      font-size:13px; line-height:1.4; color:var(--text); font-weight:500;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-    }
-    .gallery-item .zoom-icon{
-      position:absolute; top:10px; right:10px; width:32px; height:32px;
-      background:rgba(138,245,212,.2);
-      border:1px solid var(--accent); border-radius:8px;
-      display:flex; align-items:center; justify-content:center;
-      opacity:0; transition:.2s;
-    }
-    .gallery-item:hover .zoom-icon{ opacity:1; }
-    .loading{
-      text-align:center; padding:60px 20px; color:var(--muted); font-size:16px;
-    }
-    .spinner{
-      display:inline-block; width:40px; height:40px;
-      border:3px solid rgba(126,200,227,.2);
-      border-top-color:var(--accent);
-      border-radius:50%;
-      animation:spin 1s linear infinite;
-    }
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .viewer-modal{display:none;position:fixed;inset:0;z-index:200;
-      background:rgba(4,8,19,.96);backdrop-filter:blur(8px);}
-    .viewer-modal.active{display:block}
-    .viewer-header{
-      position:absolute; top:0; left:0; right:0; z-index:201;
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 20px; background:linear-gradient(180deg, rgba(8,12,28,.9), transparent); gap:20px;
-    }
-    .viewer-title-wrapper{flex:1; min-width:0;}
-    .viewer-id{
-      font-size:12px; color:var(--accent); font-weight:600; letter-spacing:.5px; margin-bottom:4px;
-    }
-    .viewer-title{font-size:16px; font-weight:500; color:var(--text);line-height:1.3;}
-    .close-btn{
-      padding:8px 18px; border-radius:10px; background:rgba(255,80,80,.15); color:#ff9999;
-      border:1px solid rgba(255,80,80,.4); font-weight:700; cursor:pointer; transition:.2s; flex-shrink:0;
-    }
-    .close-btn:hover{background:rgba(255,80,80,.25)}
-    #openseadragon-viewer{ position:absolute; inset:0; background:var(--bg);}
-    #ai-describe-btn{
-      position: absolute; right: 32px; bottom: 32px; z-index: 202;
-      padding: 14px 20px; border-radius: 18px; font-size: 15px; border: none;
-      background: #7EC8E3; color: #040813; cursor: pointer; font-family: Orbitron,sans-serif;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    }
-    #ai-description-popup{
-      display:none; position:absolute; left:50%; bottom:100px; transform:translateX(-50%);
-      background: rgba(8,12,30,0.97); color: #7EC8E3; padding: 18px 28px; border-radius: 18px;
-      box-shadow:0 4px 34px rgba(0,0,0,0.6); max-width:350px; font-size:16px; z-index:999; font-family:Inter,sans-serif;
-    }
-    @media (max-width:640px){
-      .gallery{grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:14px}
-      .viewer-id{font-size:10px}
-      .viewer-title{font-size:14px}
-      #ai-describe-btn{padding:10px 12px; font-size:14px;}
-      #ai-description-popup{max-width:98vw;}
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>AV SkyAware — Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/avskyawarelogo.jpg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+<script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
+<style>
+:root{ --bg:#040813; --bg2:#091430; --edge:#1A2A52; --edge2:#21406d; --brand:#7EC8E3; --accent:#8AF5D4; --accent2:#79D8FF; --text:#E9F2FB; --muted:#A5B6CC; }
+*{box-sizing:border-box}
+html,body{height:100%; margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif; background: radial-gradient(1200px 700px at 12% -10%, #0b1b48 0%, transparent 60%), linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%); overflow-x:hidden; }
+.header{ position: sticky; top:0; z-index:110; display:flex; align-items:center; gap:12px; padding:10px clamp(12px,3vw,20px); background:linear-gradient(180deg, rgba(8,12,28,.85), rgba(5,9,20,.82)); border-bottom:1px solid var(--edge); backdrop-filter:blur(10px); }
+.brand{display:flex; align-items:center; gap:12px}
+.brand img{width:42px; height:42px; border-radius:10px; border:1px solid var(--edge); box-shadow:0 0 16px rgba(126,200,227,.4)}
+.brand h1{margin:0; font-family:Orbitron,sans-serif; color:var(--brand); letter-spacing:.4px; font-size:clamp(18px,3.8vw,28px)}
+.spacer{flex:1}
+.back-btn{padding:8px 16px; border-radius:10px; text-decoration:none; background:rgba(126,200,227,.15); color:var(--accent2); border:1px solid var(--edge2); font-weight:600; transition:.2s}
+.back-btn:hover{background:rgba(126,200,227,.25); transform:translateY(-1px)}
+.container{max-width:1400px; margin:0 auto 80px; padding:20px;}
+.gallery{display:grid; grid-template-columns: repeat(auto-fill,minmax(300px,1fr)); gap:20px; margin-top:20px;}
+.gallery-item{position:relative; border-radius:14px; overflow:hidden; background:rgba(10,18,42,.6); border:1px solid var(--edge); cursor:pointer; transition:transform .25s ease, box-shadow .25s ease; aspect-ratio:4/3;}
+.gallery-item:hover{transform:translateY(-4px) scale(1.02); box-shadow:0 16px 40px rgba(0,0,0,.4), 0 0 30px rgba(126,200,227,.2);}
+.gallery-item img{width:100%; height:100%; object-fit:cover; display:block;}
+.overlay{position:absolute; bottom:0; left:0; right:0; padding:14px; background:linear-gradient(to top, rgba(4,8,19,.98), rgba(4,8,19,.85) 80%, transparent); color:var(--text);}
+.image-id{font-size:11px; color:var(--accent); font-weight:600; letter-spacing:.5px; margin-bottom:4px; text-transform:uppercase;}
+.image-name{font-size:13px; line-height:1.4; color:var(--text); font-weight:500; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.zoom-icon{position:absolute; top:10px; right:10px; width:32px; height:32px; background:rgba(138,245,212,.2); border:1px solid var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; opacity:0; transition:.2s;}
+.gallery-item:hover .zoom-icon{opacity:1}
+.loading{text-align:center; padding:60px 20px; color:var(--muted);}
+.spinner{display:inline-block; width:40px; height:40px; border:3px solid rgba(126,200,227,.2); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.viewer-modal{display:none; position:fixed; inset:0; z-index:200; background:rgba(4,8,19,.96); backdrop-filter:blur(8px);}
+.viewer-modal.active{display:block}
+.viewer-header{position:absolute; top:0; left:0; right:0; z-index:201; display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:linear-gradient(180deg, rgba(8,12,28,.9), transparent); gap:20px;}
+.viewer-title-wrapper{flex:1; min-width:0;}
+.viewer-id{font-size:12px; color:var(--accent); font-weight:600; letter-spacing:.5px; margin-bottom:4px;}
+.viewer-title{font-size:16px; font-weight:500; color:var(--text); line-height:1.3;}
+.close-btn{padding:8px 18px; border-radius:10px; background:rgba(255,80,80,.15); color:#ff9999; border:1px solid rgba(255,80,80,.4); font-weight:700; cursor:pointer; transition:.2s; flex-shrink:0;}
+.close-btn:hover{background:rgba(255,80,80,.25)}
+#openseadragon-viewer{position:absolute; inset:0; background:var(--bg);}
+#openseadragon-viewer .openseadragon-controls{position:absolute !important; bottom:20px !important; left:50% !important; transform:translateX(-50%) !important; display:flex !important; gap:8px !important; background:rgba(8,12,28,0.8) !important; padding:10px 16px !important; border-radius:50px !important; border:1px solid var(--edge) !important; backdrop-filter:blur(10px) !important;}
+#openseadragon-viewer .openseadragon-button{background-color:rgba(126,200,227,0.1) !important; border:1px solid var(--edge2) !important; border-radius:8px !important; transition:.2s !important;}
+#openseadragon-viewer .openseadragon-button:hover{background-color:rgba(126,200,227,0.25) !important; transform:scale(1.05) !important;}
+#ai-describe-btn{position:absolute; right:32px; bottom:32px; z-index:202; padding:14px 20px; border-radius:18px; font-size:15px; border:none; background:#7EC8E3; color:#040813; cursor:pointer; font-family:Orbitron,sans-serif; box-shadow:0 8px 24px rgba(0,0,0,0.2);}
+#ai-description-popup{display:none; position:absolute; left:50%; bottom:100px; transform:translateX(-50%); background:rgba(8,12,30,0.97); color:#7EC8E3; padding:18px 28px; border-radius:18px; box-shadow:0 4px 34px rgba(0,0,0,0.6); max-width:420px; font-size:16px; z-index:999; font-family:Inter,sans-serif; white-space:pre-wrap;}
+#annotationPanel{position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:210; background:rgba(10,20,42,0.95); border:1px solid var(--edge); border-radius:14px; padding:16px; min-width:280px; max-width:400px; backdrop-filter:blur(10px); box-shadow:0 10px 40px rgba(0,0,0,0.4); display:none;}
+</style>
 </head>
 <body>
-<div class="glow-wrap"><div class="glow"></div></div>
 <div class="header">
   <div class="brand">
-    <img src="/avskyawarelogo.jpg" alt="Logo">
+    <img src="/avskyawarelogo.jpg" alt="Logo" />
     <h1>AV SkyAware</h1>
   </div>
   <div class="spacer"></div>
   <a href="/" class="back-btn">← Back to Home</a>
 </div>
+
 <div class="container">
-  <h2 style="margin:12px 0 6px; font-family:Orbitron,sans-serif; color:var(--brand)">
-    📡 Hubble Space Image Gallery
-  </h2>
-  <p style="margin:0 0 20px; color:var(--muted)">
-    Click any image to explore in high-resolution zoomable viewer
-  </p>
+  <h2 style="margin:12px 0 6px; font-family:Orbitron,sans-serif; color:var(--brand)">📡 Hubble Space Image Gallery</h2>
+  <p style="margin:0 0 20px; color:var(--muted)">Click any image to explore in the zoomable viewer.</p>
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p style="margin-top:16px">Loading images...</p>
   </div>
   <div id="gallery" class="gallery"></div>
 </div>
+
 <div id="viewer-modal" class="viewer-modal">
   <div class="viewer-header">
     <div class="viewer-title-wrapper">
@@ -180,144 +79,322 @@
     <button class="close-btn" onclick="closeViewer()">✕ Close</button>
   </div>
   <div id="openseadragon-viewer"></div>
-  <button id="ai-describe-btn">🔎 AI Describe Region</button>
+  <button id="ai-describe-btn">What is This?</button>
   <div id="ai-description-popup"></div>
 </div>
 
-<script>
-let viewer = null;
-let currentImages = [];
-const imageNames = {
-  "heic1007a": "Hubble captures view of 'Mystic Mountain'",
-  // ... all your mapping here ... (for brevity, see prior code above)
-};
-function getImageName(imageId) {return imageNames[imageId] || imageId;}
-async function loadGallery() {
-  try {
-    const res = await fetch('/api/images');
-    const data = await res.json();
-    currentImages = data.images || [];
-    document.getElementById('loading').style.display = 'none';
-    if (currentImages.length === 0) {
-      document.getElementById('gallery').innerHTML =
-        '<p style="color:var(--muted); text-align:center; padding:40px">No images found</p>';
-      return;
-    }
-    renderGallery();
-  } catch (err) {
-    console.error('Error loading images:', err);
-    document.getElementById('loading').innerHTML =
-      '<p style="color:#ff6b6b">Error loading images. Please try again.</p>';
-  }
-}
-function renderGallery() {
-  const gallery = document.getElementById('gallery');
-  gallery.innerHTML = '';
-  currentImages.forEach((imageId, index) => {
-    const item = document.createElement('div');
-    item.className = 'gallery-item';
-    item.onclick = () => openViewer(imageId);
-    const thumbUrl = `/previews/${imageId}.jpg`;
-    const imageName = getImageName(imageId);
-    item.innerHTML = `
-      <img src="${thumbUrl}" alt="${imageName}" 
-           onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 400 300\\'%3E%3Crect fill=\\'%230F1734\\' width=\\'400\\' height=\\'300\\'/%3E%3Ctext x=\\'50%25\\' y=\\'50%25\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%23A2B4CA\\' font-family=\\'sans-serif\\' font-size=\\'16\\'%3ENo Preview%3C/text%3E%3C/svg%3E'">
-      <div class="zoom-icon">🔍</div>
-      <div class="overlay">
-        <div class="image-id">${imageId}</div>
-        <div class="image-name">${imageName}</div>
-      </div>
-    `;
-    gallery.appendChild(item);
-  });
-}
-async function openViewer(imageId) {
-  const imageName = getImageName(imageId);
-  document.getElementById('viewer-id').textContent = imageId;
-  document.getElementById('viewer-title').textContent = imageName;
-  document.getElementById('viewer-modal').classList.add('active');
-  document.body.style.overflow = 'hidden';
-  try {
-    const res = await fetch('/api/convert', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ name: imageId })
-    });
-    const data = await res.json();
-    if (data.error) {
-      alert('Error loading image: ' + data.error);
-      closeViewer();
-      return;
-    }
-    if (!viewer) {
-      viewer = OpenSeadragon({
-        id: 'openseadragon-viewer',
-        prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
-        tileSources: data.dziUrl,
-        showNavigationControl: true,
-        navigationControlAnchor: OpenSeadragon.ControlAnchor.BOTTOM_LEFT,
-        showZoomControl: true,
-        showHomeControl: true,
-        showFullPageControl: true,
-        visibilityRatio: 1.0,
-        minZoomLevel: 0.5,
-        maxZoomLevel: 10,
-        defaultZoomLevel: 0,
-        minZoomImageRatio: 0.8,
-        maxZoomPixelRatio: 3,
-        animationTime: 0.5,
-        blendTime: 0.1,
-        springStiffness: 10.0,
-        constrainDuringPan: true,
-        zoomPerClick: 2.0,
-        zoomPerScroll: 1.2,
-        gestureSettingsMouse: {
-          flickEnabled: true,
-          clickToZoom: true,
-          dblClickToZoom: true,
-          scrollToZoom: true
-        },
-        gestureSettingsTouch: {
-          flickEnabled: true,
-          pinchToZoom: true
-        }
-      });
-    } else { viewer.open(data.dziUrl); }
-  } catch (err) {
-    console.error('Error opening viewer:', err);
-    alert('Failed to load image');
-    closeViewer();
-  }
-}
-function closeViewer() {
-  document.getElementById('viewer-modal').classList.remove('active');
-  document.body.style.overflow = '';
-  if (viewer) viewer.close();
-}
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && document.getElementById('viewer-modal').classList.contains('active')) {
-    closeViewer();
-  }
-});
-loadGallery();
+<div id="annotationPanel">
+  <h3>Annotations</h3>
+  <button id="toggleAnnotate" class="btn" style="width:100%; margin-bottom:10px;">Enable Annotating</button>
+  <div id="annotationList" style="max-height:400px; overflow-y:auto;"></div>
+  <button id="exportAnnotations" class="btn ghost" style="width: 100%; margin-top: 10px;">Export JSON</button>
+</div>
 
-// BLIP AI Describe Integration
-document.getElementById('ai-describe-btn').onclick = async () => {
-  const canvas = viewer.drawer.canvas;
-  const popup = document.getElementById('ai-description-popup');
-  popup.innerHTML = 'AI is describing this region...';
-  popup.style.display = 'block';
-  canvas.toBlob(async (blob) => {
-    const formData = new FormData();
-    formData.append('image', blob, 'capture.jpg');
-    const resp = await fetch('https://hf.space/embed/SUSTech-LLM/BLIP/+/api/predict', {
-      method: 'POST',
-      body: formData
+<script>
+  let viewer = null;
+  let currentImages = [];
+  let annotations = [];
+  let annotationMode = false;
+
+  const imageNames = {
+    "heic1007a": "Hubble captures view of 'Mystic Mountain'",
+    // Add all your image name mappings here
+  };
+
+  function getImageName(id){
+    return imageNames[id] || id;
+  }
+
+  async function loadGallery(){
+    try {
+      const res = await fetch('/api/images');
+      if(!res.ok) throw new Error('Failed to fetch images: '+res.status);
+      const data = await res.json();
+      if(!data.images || !Array.isArray(data.images)) throw new Error('Invalid response format');
+      currentImages = data.images;
+      document.getElementById("loading").style.display = "none";
+      if(currentImages.length === 0){
+        document.getElementById("gallery").innerHTML =
+          '<p style="color:var(--muted); text-align:center; padding:40px">No images found</p>';
+          return;
+      }
+      renderGallery();
+    } catch(err) {
+      console.error('Error loading images:', err);
+      document.getElementById("loading").innerHTML = '<p style="color:#ff6b6b; text-align:center; padding:40px">' + err.message + '</p>';
+    }
+  }
+
+  function renderGallery(){
+    const gallery = document.getElementById("gallery");
+    gallery.innerHTML = '';
+    currentImages.forEach(id => {
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
+      item.onclick = () => openViewer(id);
+      const thumbUrl = `/previews/${id}.jpg`;
+      const name = getImageName(id);
+      item.innerHTML = `
+        <img src="${thumbUrl}" alt="${name}" 
+         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 400 300\\'%3E%3Crect fill=\\'%230F1734\\' width=\\'400\\' height=\\'300\\'/%3E%3Ctext x=\\'50%25\\' y=\\'50%25\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%23A2B4CA\\' font-family=\\'sans-serif\\' font-size=\\'16\\'%3ENo Preview%3C/text%3E%3C/svg%3E'"
+        />
+        <div class="zoom-icon">🔍</div>
+        <div class="overlay">
+          <div class="image-id">${id}</div>
+          <div class="image-name">${name}</div>
+        </div>
+      `;
+      gallery.appendChild(item);
     });
-    const data = await resp.json();
-    popup.innerHTML = '<b>AI Description:</b><br>' + (data.data ? data.data[0] : JSON.stringify(data));
-  }, 'image/jpeg', 0.95);
-};
+  }
+
+  async function openViewer(id){
+    const name = getImageName(id);
+    document.getElementById('viewer-id').textContent = id;
+    document.getElementById('viewer-title').textContent = name;
+    document.getElementById('viewer-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    try {
+      const res = await fetch('/api/convert', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: id})
+      });
+      const data = await res.json();
+      if(data.error) {
+        alert('Error loading image: ' + data.error);
+        closeViewer();
+        return;
+      }
+      if(!viewer) {
+        viewer = OpenSeadragon({
+          id: 'openseadragon-viewer',
+          prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
+          tileSources: data.dziUrl,
+          showNavigationControl: true,
+          navigationControlAnchor: OpenSeadragon.ControlAnchor.BOTTOM_LEFT,
+          showZoomControl: true,
+          showHomeControl: true,
+          showFullPageControl: true,
+          visibilityRatio: 1.0,
+          minZoomLevel: 0.5,
+          maxZoomLevel: 10,
+          defaultZoomLevel: 0,
+          minZoomImageRatio: 0.8,
+          maxZoomPixelRatio: 3,
+          animationTime: 0.5,
+          blendTime: 0.1,
+          springStiffness: 10.0,
+          constrainDuringPan: true,
+          zoomPerClick: 2.0,
+          zoomPerScroll: 1.2,
+          gestureSettingsMouse: {flickEnabled:true, clickToZoom:true, dblClickToZoom:true, scrollToZoom:true},
+          gestureSettingsTouch: {flickEnabled:true, pinchToZoom:true}
+        });
+      } else {
+        viewer.open(data.dziUrl);
+      }
+      loadAnnotationsForImage(id);
+      setupAnnotationHandlers();
+    } catch(e) {
+      console.error('Error opening viewer:', e);
+      alert('Failed to load image');
+      closeViewer();
+    }
+  }
+
+  function closeViewer(){
+    document.getElementById('viewer-modal').classList.remove('active');
+    document.body.style.overflow = '';
+    if(viewer) viewer.close();
+  }
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && document.getElementById('viewer-modal').classList.contains('active')){
+      closeViewer();
+    }
+  });
+
+  // Annotation functions
+
+  function loadAnnotationsForImage(imageName) {
+    const saved = localStorage.getItem('avskyaware_annotations');
+    annotations = saved ? JSON.parse(saved) : [];
+    viewer.clearOverlays();
+    annotations.filter(a => a.image === imageName).forEach(a => addAnnotationMarker(a));
+    updateAnnotationList();
+  }
+
+  function setupAnnotationHandlers() {
+    new OpenSeadragon.MouseTracker({
+      element: viewer.element,
+      clickHandler: (e) => {
+        if(!annotationMode || !viewer) return;
+        const viewportPoint = viewer.viewport.pointFromPixel(e.position);
+        const text = prompt("Enter annotation text:");
+        if(!text) return;
+        const annotation = {
+          id: Date.now(),
+          image: document.getElementById('viewer-id').textContent,
+          x: viewportPoint.x,
+          y: viewportPoint.y,
+          text: text,
+          timestamp: new Date().toISOString()
+        };
+        annotations.push(annotation);
+        addAnnotationMarker(annotation);
+        updateAnnotationList();
+        saveAnnotations();
+      }
+    });
+  }
+
+  function addAnnotationMarker(annotation) {
+    const marker = document.createElement('div');
+    marker.className = 'annotation-marker';
+    marker.innerHTML = `
+      <div class="marker-dot"></div>
+      <div class="marker-tooltip">${annotation.text}</div>`;
+    marker.dataset.id = annotation.id;
+
+    if(!document.getElementById('annotationStyles')) {
+      const style = document.createElement('style');
+      style.id = 'annotationStyles';
+      style.textContent = `
+        .annotation-marker {
+          position: absolute;
+          cursor: pointer;
+          z-index: 50;
+        }
+        .marker-dot {
+          width: 16px; height: 16px;
+          background: radial-gradient(circle, #8AF5D4, #79D8FF);
+          border: 2px solid #031018;
+          border-radius: 50%;
+          box-shadow: 0 0 12px rgba(138,245,212,0.6), 0 4px 8px rgba(0,0,0,0.3);
+          animation: pulse 2s ease-in-out infinite;
+        }
+        .marker-tooltip {
+          display: none;
+          position: absolute;
+          left: 20px; top: -8px;
+          background: rgba(10,20,42,0.95);
+          border: 1px solid var(--edge);
+          border-radius: 8px;
+          padding: 8px 12px;
+          color: var(--text);
+          white-space: nowrap;
+          max-width: 200px;
+          font-size: 13px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          backdrop-filter: blur(8px);
+        }
+        .annotation-marker:hover .marker-tooltip {
+          display: block;
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.15); opacity: 0.8; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    viewer.addOverlay({
+      element: marker,
+      location: new OpenSeadragon.Point(annotation.x, annotation.y),
+      placement: OpenSeadragon.Placement.CENTER
+    });
+
+    marker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if(confirm('Delete this annotation?')) {
+        deleteAnnotation(annotation.id);
+      }
+    });
+  }
+
+  function updateAnnotationList() {
+    const imageName = document.getElementById('viewer-id').textContent;
+    const imageAnnotations = annotations.filter(a => a.image === imageName);
+    if(imageAnnotations.length === 0) {
+      annotationList.innerHTML = '<p style="color: var(--muted); font-size: 13px;">No annotations yet</p>';
+      return;
+    }
+    annotationList.innerHTML = imageAnnotations.map(a => `
+      <div style="background: rgba(15,25,50,0.6); border: 1px solid var(--edge); border-radius: 8px; padding: 10px; margin-bottom: 8px; cursor: pointer;"
+           onclick="jumpToAnnotation(${a.id})">
+        <div style="color: var(--accent); font-size: 12px; margin-bottom: 4px;">
+          ${new Date(a.timestamp).toLocaleString()}
+        </div>
+        <div style="color: var(--text); font-size: 14px;">${a.text}</div>
+      </div>
+    `).join('');
+  }
+
+  window.jumpToAnnotation = function(id) {
+    const annotation = annotations.find(a => a.id === id);
+    if(!annotation || !viewer) return;
+    viewer.viewport.panTo(new OpenSeadragon.Point(annotation.x, annotation.y), true);
+    viewer.viewport.zoomTo(viewer.viewport.getZoom() * 1.5, null, true);
+  };
+
+  function deleteAnnotation(id) {
+    annotations = annotations.filter(a => a.id !== id);
+    const marker = document.querySelector(`[data-id="${id}"]`);
+    if(marker) {
+      viewer.removeOverlay(marker);
+    }
+    updateAnnotationList();
+    saveAnnotations();
+  }
+
+  function saveAnnotations() {
+    localStorage.setItem('avskyaware_annotations', JSON.stringify(annotations));
+  }
+
+  // AI Describe with local Moondream model running on Ollama
+  document.getElementById('ai-describe-btn').onclick = async () => {
+    const popup = document.getElementById('ai-description-popup');
+    try {
+      const canvas = viewer?.drawer?.canvas;
+      if(!canvas) throw new Error('Viewer not ready');
+      popup.style.display = 'block';
+      popup.textContent = 'AI is describing this region...';
+
+      const dataURL = canvas.toDataURL('image/jpeg', 0.7);
+      const base64 = dataURL.split(',')[1];
+      if(!base64) throw new Error('Failed to capture image.');
+
+      const resp = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model: 'moondream',
+          prompt: 'Describe this astronomy image region for a student.',
+          images: [ base64 ],
+          stream: false
+        }),
+      });
+      if(!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Ollama error: ${resp.status} ${text}`);
+      }
+      const data = await resp.json();
+      if(!data.response) throw new Error('No response from Ollama');
+      popup.innerHTML = '<b>AI Description:</b><br>' + data.response;
+    } catch(e) {
+      popup.innerHTML = 'AI failed. ' + (e.message || e);
+      console.error(e);
+    }
+  };
+
+  loadGallery();
+
+  function setStatus(text) {
+    // Optional: implement status UI feedback if needed
+    console.log(text);
+  }
 </script>
 </body>
 </html>
